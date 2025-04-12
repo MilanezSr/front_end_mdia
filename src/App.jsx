@@ -53,7 +53,7 @@ export default function App() {
   ];
 
   const gerarPDF = () => {
-    axios.post('http://localhost:8000/gerar-contrato', dadosContrato, { responseType: 'blob' })
+    axios.post('https://contratos-mydia.onrender.com/gerar-contrato', dadosContrato, { responseType: 'blob' })
       .then(response => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
