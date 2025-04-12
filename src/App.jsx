@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
+import OpeningAnimation from './OpeningAnimation'; // certifique-se de que esse componente existe
 
 export default function App() {
   const [etapa, setEtapa] = useState(0);
   const [mensagens, setMensagens] = useState([]);
   const [digitando, setDigitando] = useState(false);
   const [resposta, setResposta] = useState('');
+  const [pdfUrl, setPdfUrl] = useState(null);
+
   const [dados, setDados] = useState({
     tipo_contratante: '',
     contratante_nome: '',
@@ -30,7 +33,6 @@ export default function App() {
     nome_testemunha_contratada: 'MYLENA SIMOES',
     rg_testemunha_contratada: '',
   });
-  const [pdfUrl, setPdfUrl] = useState(null);
 
   const etapas = [
     { campo: 'tipo_contratante', pergunta: 'Olá! A contratante é pessoa física ou jurídica?' },
@@ -96,6 +98,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center px-4 py-8">
+      <OpeningAnimation />
       <h1 className="text-pink-500 font-bold text-3xl mb-6">Mydia Documentos</h1>
       <div className="w-full max-w-xl bg-zinc-900 rounded-xl p-4 space-y-4">
         {mensagens.map((msg, i) => (
