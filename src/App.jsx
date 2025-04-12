@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useReducer } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import OpeningAnimation from './components/OpeningAnimation';
 
-// Definir os estados com useReducer
 const initialState = {
   dadosContrato: {
     tipo_contratante: '',
@@ -41,8 +40,8 @@ function reducer(state, action) {
       return { ...state, dadosContrato: { ...state.dadosContrato, ...action.payload } };
     case 'SET_ETAPA':
       return { ...state, etapaAtual: action.payload };
-    case 'SET_MENSAGENS':
-      return { ...state, mensagens: action.payload };
+    case 'ADD_MENSAGEM':
+      return { ...state, mensagens: [...state.mensagens, action.payload] };
     case 'SET_DIGITANDO':
       return { ...state, digitando: action.payload };
     case 'SET_RESPOSTA':
@@ -78,19 +77,6 @@ export default function App() {
     { campo: 'rg_testemunha_contratada', pergunta: 'RG da testemunha que você irá colocar:' },
   ];
 
-  // Exibe a pergunta da etapa atual
-  useEffect(() => {
-    if (etapaAtual < etapas.length) {
-      const { pergunta } = etapas[etapaAtual];
-      dispatch({ type: 'SET_DIGITANDO', payload: true });
-      setTimeout(() => {
-        dispatch({ type: 'SET_MENSAGENS', payload: [...mensagens, { autor: 'mydia', texto: pergunta }] });
-        dispatch({ type: 'SET_DIGITANDO', payload: false });
-      }, 800);
-    }
-  }, [etapaAtual, mensagens]);
-
-  // Validação de campos numéricos
   const validarCampos = () => {
     const { valor_servico, valor_total } = dadosContrato;
     if (isNaN(valor_servico) || isNaN(valor_total)) {
@@ -100,7 +86,6 @@ export default function App() {
     return true;
   };
 
-  // Envia os dados e gera o PDF
   const handleSubmit = async () => {
     if (!validarCampos()) return;
 
@@ -117,32 +102,39 @@ export default function App() {
       const url = URL.createObjectURL(blob);
 
       dispatch({ type: 'SET_PDF_URL', payload: url });
-      dispatch({ type: 'SET_MENSAGENS', payload: [...mensagens, { autor: 'mydia', texto: 'Contrato gerado com sucesso, gata! 🎉 Clique abaixo para baixar o seu contrato.' }] });
+      dispatch({
+        type: 'ADD_MENSAGEM',
+        payload: { autor: 'mydia', texto: 'Contrato gerado com sucesso, gata! 🎉 Clique abaixo para baixar o seu contrato.' },
+      });
     } catch (error) {
       console.error("Erro ao gerar o contrato:", error);
       alert("Ocorreu um erro ao gerar o contrato.");
     }
   };
 
-  // Lógica de envio de resposta
   const enviarResposta = () => {
-    const campoAtual = etapas[etapaAtual].campo;
-    const valorDigitado = resposta.trim();
+    const etapa = etapas[etapaAtual];
+    const valor = resposta.trim();
 
-    if (!valorDigitado) return;
+    if (!valor) return;
 
-    const valorFormatado = campoAtual === 'tem_gastos_extras' ? valorDigitado.toLowerCase() === 'sim' : valorDigitado;
+    const respostaConvertida =
+      etapa.campo === 'tem_gastos_extras' ? valor.toLowerCase() === 'sim' : valor;
 
-    dispatch({ type: 'UPDATE_DADOS', payload: { [campoAtual]: valorFormatado } });
-    dispatch({ type: 'SET_MENSAGENS', payload: [...mensagens, { autor: 'user', texto: valorDigitado }] });
+    dispatch({ type: 'UPDATE_DADOS', payload: { [etapa.campo]: respostaConvertida } });
+    dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
     dispatch({ type: 'SET_RESPOSTA', payload: '' });
 
-    if (campoAtual === 'tem_gastos_extras' && !valorFormatado) {
-      dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 2 }); // pula a etapa de descrição dos gastos
+    if (etapa.campo === 'tem_gastos_extras' && valor.toLowerCase() !== 'sim') {
+      dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 2 }); // Pula "gastos_detalhados"
     } else if (etapaAtual === etapas.length - 1) {
       handleSubmit();
     } else {
       dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
+      dispatch({
+        type: 'ADD_MENSAGEM',
+        payload: { autor: 'mydia', texto: etapas[etapaAtual + 1].pergunta },
+      });
     }
   };
 
@@ -162,12 +154,8 @@ export default function App() {
             </motion.div>
           </div>
         ))}
-        {digitando && (
-          <div className="flex justify-start">
-            <div className="px-3 py-2 rounded-lg bg-zinc-800 text-pink-400 animate-pulse">🟢 Paciência, gata...</div>
-          </div>
-        )}
-        {!pdfUrl && !digitando && (
+
+        {!pdfUrl && (
           <div className="flex gap-2">
             <input
               className="flex-1 bg-zinc-800 p-2 rounded text-white border border-pink-500 focus:outline-none"
@@ -179,6 +167,7 @@ export default function App() {
             <button onClick={enviarResposta} className="bg-pink-600 px-4 rounded">Enviar</button>
           </div>
         )}
+
         {pdfUrl && (
           <div className="text-center mt-6">
             <a
