@@ -31,7 +31,7 @@ const initialState = {
   mensagens: [],
   resposta: '',
   pdfUrl: null,
-  contratoConfirmado: false, // Novo estado para controlar o fluxo
+  contratoConfirmado: false,
 };
 
 function reducer(state, action) {
@@ -47,9 +47,9 @@ function reducer(state, action) {
     case 'SET_PDF_URL':
       return { ...state, pdfUrl: action.payload };
     case 'CANCELAR_CONTRATO':
-      return { ...state, contratoConfirmado: false, mensagens: [...state.mensagens, { autor: 'mydia', texto: 'Que pena, My... gostaria de te ajudar!' }] }; 
+      return { ...state, contratoConfirmado: false, mensagens: [...state.mensagens, { autor: 'mydia', texto: 'Que pena, My... gostaria de te ajudar!' }] };
     case 'CONFIRMAR_CONTRATO':
-      return { ...state, contratoConfirmado: true }; // Contrato confirmado
+      return { ...state, contratoConfirmado: true };
     default:
       return state;
   }
@@ -84,15 +84,33 @@ export default function App() {
     const valor = resposta.trim();
     if (!valor) return;
 
-    dispatch({ type: 'UPDATE_DADOS', payload: { [etapa.campo]: valor } });
-    dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
-    dispatch({ type: 'SET_RESPOSTA', payload: '' });
+    const campoAtual = etapa.campo;
 
-    if (etapaAtual === etapas.length - 1) {
-      // Logic to handle PDF generation goes here
+    if (campoAtual === 'tem_gastos_extras') {
+      const temGastos = valor.toLowerCase() === 'sim';
+      dispatch({ type: 'UPDATE_DADOS', payload: { tem_gastos_extras: temGastos } });
+      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
+      dispatch({ type: 'SET_RESPOSTA', payload: '' });
+
+      if (!temGastos) {
+        dispatch({ type: 'UPDATE_DADOS', payload: { gastos_detalhados: 'Sem gastos extras' } });
+        dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 2 });
+        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[etapaAtual + 2].pergunta } });
+      } else {
+        dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
+        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[etapaAtual + 1].pergunta } });
+      }
     } else {
-      dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
-      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[etapaAtual + 1].pergunta } });
+      dispatch({ type: 'UPDATE_DADOS', payload: { [campoAtual]: valor } });
+      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
+      dispatch({ type: 'SET_RESPOSTA', payload: '' });
+
+      if (etapaAtual === etapas.length - 1) {
+        // Lógica de geração de PDF aqui
+      } else {
+        dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
+        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[etapaAtual + 1].pergunta } });
+      }
     }
   };
 
@@ -101,13 +119,13 @@ export default function App() {
       dispatch({ type: 'CANCELAR_CONTRATO' });
     } else {
       dispatch({ type: 'CONFIRMAR_CONTRATO' });
-      dispatch({ type: 'SET_ETAPA', payload: 1 }); // Avançar para a próxima pergunta
-      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[1].pergunta } });
+      dispatch({ type: 'SET_ETAPA', payload: 0 });
+      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[0].pergunta } });
     }
+    dispatch({ type: 'SET_RESPOSTA', payload: '' });
   };
 
   useEffect(() => {
-    // Mensagem inicial de boas-vindas
     dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: 'Seja bem-vinda, My! Aproveite a sua ferramenta.' } });
     dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: 'Quer realizar um contrato comigo? (sim/não)' } });
   }, []);
