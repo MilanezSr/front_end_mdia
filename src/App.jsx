@@ -128,7 +128,7 @@ export default function App() {
                 transition={{ duration: 0.4 }}
                 className="bg-gray-700 text-pink-400 px-4 py-2 rounded-lg max-w-[80%]"
               >
-                🕒 Digite sua resposta...
+                Quer realizar um contrato comigo?
               </motion.div>
             </div>
           )}
