@@ -55,23 +55,23 @@ export default function App() {
   const { etapaAtual, mensagens, resposta, pdfUrl, dadosContrato } = state;
 
   const etapas = [
-    { campo: 'tipo_contratante', pergunta: 'A contratante é pessoa física ou jurídica?' },
-    { campo: 'contratante_nome', pergunta: 'Qual o nome da contratante?' },
-    { campo: 'contratante_cnpj', pergunta: 'Qual o CNPJ ou CPF da contratante?' },
-    { campo: 'contratante_endereco', pergunta: 'Qual o endereço da contratante?' },
-    { campo: 'descricao_servico', pergunta: 'Descreva brevemente o serviço contratado.' },
-    { campo: 'servico_detalhado', pergunta: 'Detalhe o serviço que será realizado.' },
-    { campo: 'entregas_detalhadas', pergunta: 'Quais as entregas previstas?' },
-    { campo: 'equipe_detalhada', pergunta: 'Qual será a equipe envolvida com você?' },
-    { campo: 'captacao_detalhada', pergunta: 'Detalhes sobre a captação (ex: interna, áudio, iluminação).' },
-    { campo: 'valor_servico', pergunta: 'Qual o valor do serviço?' },
-    { campo: 'tem_gastos_extras', pergunta: 'Existem gastos extras (como estacionamento)? (sim/não)' },
-    { campo: 'gastos_detalhados', pergunta: 'Descreva os gastos extras.' },
-    { campo: 'valor_total', pergunta: 'Qual o valor total (serviço + extras)?' },
-    { campo: 'data_contrato', pergunta: 'Informe data e local do contrato.' },
-    { campo: 'nome_testemunha_contratante', pergunta: 'Nome da testemunha da contratante:' },
-    { campo: 'rg_testemunha_contratante', pergunta: 'RG da testemunha da contratante:' },
-    { campo: 'rg_testemunha_contratada', pergunta: 'RG da sua testemunha:' },
+    { campo: 'tipo_contratante', pergunta: '👥 A contratante é pessoa física ou jurídica?' },
+    { campo: 'contratante_nome', pergunta: '📝 Qual o nome da contratante?' },
+    { campo: 'contratante_cnpj', pergunta: '🏢 Qual o CNPJ ou CPF da contratante?' },
+    { campo: 'contratante_endereco', pergunta: '📍 Qual o endereço da contratante?' },
+    { campo: 'descricao_servico', pergunta: '🔧 Descreva brevemente o serviço contratado.' },
+    { campo: 'servico_detalhado', pergunta: '⚙️ Detalhe o serviço que será realizado.' },
+    { campo: 'entregas_detalhadas', pergunta: '📦 Quais as entregas previstas?' },
+    { campo: 'equipe_detalhada', pergunta: '👨‍💻 Qual será a equipe envolvida com você?' },
+    { campo: 'captacao_detalhada', pergunta: '🎥 Detalhes sobre a captação (ex: interna, áudio, iluminação).' },
+    { campo: 'valor_servico', pergunta: '💰 Qual o valor do serviço?' },
+    { campo: 'tem_gastos_extras', pergunta: '💡 Existem gastos extras (como estacionamento)? (sim/não)' },
+    { campo: 'gastos_detalhados', pergunta: '💵 Descreva os gastos extras.' },
+    { campo: 'valor_total', pergunta: '💸 Qual o valor total (serviço + extras)?' },
+    { campo: 'data_contrato', pergunta: '📅 Informe data e local do contrato.' },
+    { campo: 'nome_testemunha_contratante', pergunta: '👥 Nome da testemunha da contratante:' },
+    { campo: 'rg_testemunha_contratante', pergunta: '🆔 RG da testemunha da contratante:' },
+    { campo: 'rg_testemunha_contratada', pergunta: '🆔 RG da sua testemunha:' },
   ];
 
   const enviarResposta = () => {
@@ -115,6 +115,18 @@ export default function App() {
               </motion.div>
             </div>
           ))}
+          {etapaAtual < etapas.length && (
+            <div className="flex justify-start">
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="bg-gray-700 text-pink-400 px-4 py-2 rounded-lg max-w-[80%]"
+              >
+                🕒 Digite sua resposta...
+              </motion.div>
+            </div>
+          )}
         </div>
 
         <div className="input-container flex gap-2 mt-4">
