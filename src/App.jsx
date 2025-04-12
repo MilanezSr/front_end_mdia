@@ -2,6 +2,7 @@ import React, { useState, useEffect, useReducer } from 'react';
 import { motion } from 'framer-motion';
 import './App.css'; // Se precisar de algum estilo extra
 import OpeningAnimation from './components/OpeningAnimation'; // Sua animação inicial
+import jsPDF from 'jspdf'; // Importando a biblioteca jsPDF para gerar o PDF
 
 const initialState = {
   dadosContrato: {
@@ -79,6 +80,39 @@ export default function App() {
     { campo: 'rg_testemunha_contratada', pergunta: '🆔 RG da sua testemunha:' },
   ];
 
+  const gerarPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFont("helvetica", "normal");
+
+    doc.text(`Contrato de Prestação de Serviços`, 20, 20);
+    doc.text(`-------------------------------------------------`, 20, 30);
+    
+    doc.text(`Contrato firmado entre ${dadosContrato.contratante_nome} (contratante) e ${dadosContrato.contratada_nome} (contratada)`, 20, 40);
+    doc.text(`CNPJ/CPF: ${dadosContrato.contratante_cnpj} / ${dadosContrato.contratada_cnpj}`, 20, 50);
+    doc.text(`Endereço: ${dadosContrato.contratante_endereco} / ${dadosContrato.contratada_endereco}`, 20, 60);
+
+    doc.text(`Serviço Contratado: ${dadosContrato.descricao_servico}`, 20, 70);
+    doc.text(`Detalhamento do Serviço: ${dadosContrato.servico_detalhado}`, 20, 80);
+    doc.text(`Entregas: ${dadosContrato.entregas_detalhadas}`, 20, 90);
+    doc.text(`Equipe: ${dadosContrato.equipe_detalhada}`, 20, 100);
+    doc.text(`Valor do Serviço: ${dadosContrato.valor_servico}`, 20, 110);
+    
+    if (dadosContrato.tem_gastos_extras) {
+      doc.text(`Gastos Extras: ${dadosContrato.gastos_detalhados}`, 20, 120);
+    }
+    
+    doc.text(`Valor Total: ${dadosContrato.valor_total}`, 20, 130);
+    doc.text(`Data do Contrato: ${dadosContrato.data_contrato}`, 20, 140);
+    doc.text(`Testemunha Contratante: ${dadosContrato.nome_testemunha_contratante}`, 20, 150);
+    doc.text(`RG Testemunha Contratante: ${dadosContrato.rg_testemunha_contratante}`, 20, 160);
+    doc.text(`Testemunha Contratada: ${dadosContrato.nome_testemunha_contratada}`, 20, 170);
+    doc.text(`RG Testemunha Contratada: ${dadosContrato.rg_testemunha_contratada}`, 20, 180);
+    
+    const pdfUrl = doc.output('bloburl'); // Cria a URL do PDF
+    dispatch({ type: 'SET_PDF_URL', payload: pdfUrl });
+  };
+
   const enviarResposta = () => {
     const etapa = etapas[etapaAtual];
     const valor = resposta.trim();
@@ -106,7 +140,7 @@ export default function App() {
       dispatch({ type: 'SET_RESPOSTA', payload: '' });
 
       if (etapaAtual === etapas.length - 1) {
-        // Lógica de geração de PDF aqui
+        gerarPDF(); // Gera o PDF quando a última etapa for concluída
       } else {
         dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
         dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[etapaAtual + 1].pergunta } });
@@ -154,18 +188,6 @@ export default function App() {
               </motion.div>
             </div>
           ))}
-          {etapaAtual < etapas.length && contratoConfirmado && (
-            <div className="flex justify-start">
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="bg-gray-700 text-pink-400 px-4 py-2 rounded-lg max-w-[80%]"
-              >
-                🕒 Digite sua resposta...
-              </motion.div>
-            </div>
-          )}
         </div>
 
         <div className="input-container flex gap-2 mt-4">
@@ -174,26 +196,22 @@ export default function App() {
             className="flex-1 bg-gray-800 p-2 rounded text-white border border-pink-500 focus:outline-none"
             value={resposta}
             onChange={(e) => dispatch({ type: 'SET_RESPOSTA', payload: e.target.value })}
-            onKeyDown={(e) => e.key === 'Enter' && (contratoConfirmado ? enviarResposta() : responderContrato(resposta))}
             placeholder="Digite sua resposta..."
           />
           <button
-            onClick={() => contratoConfirmado ? enviarResposta() : responderContrato(resposta)}
-            className="bg-pink-600 px-4 rounded text-white hover:bg-pink-700 transition"
+            className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-700"
+            onClick={enviarResposta}
           >
             Enviar
           </button>
         </div>
 
-        {pdfUrl && (
-          <div className="text-center mt-6">
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-pink-600 px-6 py-3 rounded-full text-white hover:bg-pink-700 transition"
-            >
-              📄 Baixar Contrato PDF
+        {contratoConfirmado && pdfUrl && (
+          <div className="mt-6">
+            <a href={pdfUrl} download="contrato.pdf">
+              <button className="bg-pink-500 text-white px-6 py-3 rounded hover:bg-pink-700">
+                Baixar Contrato
+              </button>
             </a>
           </div>
         )}
