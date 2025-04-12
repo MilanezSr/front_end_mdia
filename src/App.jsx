@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
-import OpeningAnimation from './components/OpeningAnimation'; // certifique-se de que esse componente existe
+import OpeningAnimation from './components/OpeningAnimation';
 
 export default function App() {
-  const [etapa, setEtapa] = useState(0);
+  const [etapaAtual, setEtapaAtual] = useState(0);
   const [mensagens, setMensagens] = useState([]);
   const [digitando, setDigitando] = useState(false);
   const [resposta, setResposta] = useState('');
   const [pdfUrl, setPdfUrl] = useState(null);
-
-  const [dados, setDados] = useState({
+  const [dadosContrato, setDadosContrato] = useState({
     tipo_contratante: '',
     contratante_nome: '',
     contratante_cnpj: '',
@@ -35,7 +34,7 @@ export default function App() {
   });
 
   const etapas = [
-    { campo: 'tipo_contratante', pergunta: 'Olá! A contratante é pessoa física ou jurídica?' },
+    { campo: 'tipo_contratante', pergunta: 'Olá, Mylena! A contratante é pessoa física ou jurídica?' },
     { campo: 'contratante_nome', pergunta: 'Qual o nome da contratante?' },
     { campo: 'contratante_cnpj', pergunta: 'Qual o CNPJ ou CPF da contratante?' },
     { campo: 'contratante_endereco', pergunta: 'Qual o endereço da contratante?' },
@@ -51,58 +50,92 @@ export default function App() {
     { campo: 'data_contrato', pergunta: 'Informe a data e local do contrato (ex: Guarulhos, 11 de Abril de 2025).' },
     { campo: 'nome_testemunha_contratante', pergunta: 'Nome da testemunha da contratante:' },
     { campo: 'rg_testemunha_contratante', pergunta: 'RG da testemunha da contratante:' },
-    { campo: 'rg_testemunha_contratada', pergunta: 'RG da testemunha da contratada (Mylena):' },
+    { campo: 'rg_testemunha_contratada', pergunta: 'RG da testemunha da Mylena:' },
   ];
 
+  // Exibe a pergunta da etapa atual
   useEffect(() => {
-    if (etapa < etapas.length) {
-      const { pergunta } = etapas[etapa];
+    if (etapaAtual < etapas.length) {
+      const { pergunta } = etapas[etapaAtual];
       setDigitando(true);
       setTimeout(() => {
         setMensagens((msgs) => [...msgs, { autor: 'mydia', texto: pergunta }]);
         setDigitando(false);
       }, 800);
     }
-  }, [etapa]);
+  }, [etapaAtual]);
 
+  // Envia os dados e gera o PDF
   const handleSubmit = async () => {
     const res = await fetch('https://contratos-mydia.onrender.com/gerar-contrato', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dados),
+      body: JSON.stringify(dadosContrato),
     });
+
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
+
     setPdfUrl(url);
-    setMensagens((msgs) => [...msgs, { autor: 'mydia', texto: 'Contrato gerado com sucesso! 🎉 Clique abaixo para baixar.' }]);
+    setMensagens((msgs) => [
+      ...msgs,
+      { autor: 'mydia', texto: 'Contrato gerado com sucesso, My! Clique abaixo para baixar o seu arquivo.' },
+    ]);
   };
 
+  // Lógica de envio de resposta
   const enviarResposta = () => {
-    const campo = etapas[etapa].campo;
-    const valor = resposta.trim();
-    if (!valor) return;
+    const campoAtual = etapas[etapaAtual].campo;
+    const valorDigitado = resposta.trim();
 
-    const novoValor = campo === 'tem_gastos_extras' ? valor.toLowerCase() === 'sim' : valor;
-    setDados((prev) => ({ ...prev, [campo]: novoValor }));
-    setMensagens((msgs) => [...msgs, { autor: 'user', texto: valor }]);
+    if (!valorDigitado) return;
+
+    const valorFormatado =
+      campoAtual === 'tem_gastos_extras'
+        ? valorDigitado.toLowerCase() === 'sim'
+        : valorDigitado;
+
+    setDadosContrato((prev) => ({ ...prev, [campoAtual]: valorFormatado }));
+    setMensagens((msgs) => [...msgs, { autor: 'user', texto: valorDigitado }]);
     setResposta('');
 
-    if (campo === 'tem_gastos_extras' && !novoValor) {
-      setEtapa(etapa + 2); // pula gastos_detalhados se não tiver
-    } else if (etapa === etapas.length - 1) {
+    if (campoAtual === 'tem_gastos_extras' && !valorFormatado) {
+      setEtapaAtual(etapaAtual + 2); // pula a etapa de descrição dos gastos
+    } else if (etapaAtual === etapas.length - 1) {
       handleSubmit();
     } else {
-      setEtapa(etapa + 1);
+      setEtapaAtual(etapaAtual + 1);
     }
+  };
+
+  // Lógica de alteração de campo (para checkbox)
+  const handleChange = (e) => {
+    const { name: campo, value, type, checked } = e.target;
+    const novoValor = type === 'checkbox' ? checked : value;
+
+    setDadosContrato((prev) => ({ ...prev, [campo]: novoValor }));
+
+    // Lógica especial para pular "gastos_detalhados" se "tem_gastos_extras" for falso
+    if (campo === 'tem_gastos_extras') {
+      if (!novoValor || novoValor === 'não' || novoValor === 'nao' || novoValor === 'false') {
+        setDadosContrato((prev) => ({ ...prev, gastos_detalhados: '' }));
+        setEtapaAtual(etapaAtual + 2); // Pula a etapa de gastos_detalhados
+        return;
+      }
+    }
+
+    setEtapaAtual(etapaAtual + 1);
   };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center px-4 py-8">
       <OpeningAnimation />
-      <h1 className="text-pink-500 font-bold text-3xl mb-6">Mydia Documentos</h1>
+
+      <h1 className="text-pink-500 font-bold text-3xl mb-6">Mydia AI</h1>
+
       <div className="w-full max-w-xl bg-zinc-900 rounded-xl p-4 space-y-4">
-        {mensagens.map((msg, i) => (
-          <div key={i} className={`flex ${msg.autor === 'mydia' ? 'justify-start' : 'justify-end'}`}>
+        {mensagens.map((msg, index) => (
+          <div key={index} className={`flex ${msg.autor === 'mydia' ? 'justify-start' : 'justify-end'}`}>
             <motion.div
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
@@ -115,7 +148,7 @@ export default function App() {
 
         {digitando && (
           <div className="flex justify-start">
-            <div className="px-3 py-2 rounded-lg bg-zinc-800 text-pink-400 animate-pulse">Digitando...</div>
+            <div className="px-3 py-2 rounded-lg bg-zinc-800 text-pink-400 animate-pulse">Paciência, My...</div>
           </div>
         )}
 
@@ -128,13 +161,18 @@ export default function App() {
               onChange={(e) => setResposta(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && enviarResposta()}
             />
-            <button onClick={enviarResposta} className="bg-pink-600 px-4 rounded">Enviar</button>
+            <button onClick={enviarResposta} className="bg-pink-600 px-4 rounded">Envie, My</button>
           </div>
         )}
 
         {pdfUrl && (
           <div className="text-center mt-6">
-            <a href={pdfUrl} target="_blank" className="bg-pink-600 px-6 py-3 rounded-full text-white hover:bg-pink-700 transition">
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-pink-600 px-6 py-3 rounded-full text-white hover:bg-pink-700 transition"
+            >
               📄 Baixar Contrato PDF
             </a>
           </div>
