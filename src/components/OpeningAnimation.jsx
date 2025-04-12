@@ -6,7 +6,7 @@ export default function OpeningAnimation() {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(false), 2500);
+    const timer = setTimeout(() => setIsVisible(false), 2500); // Tempo de animação de 2,5 segundos
     return () => clearTimeout(timer);
   }, []);
 
@@ -22,7 +22,7 @@ export default function OpeningAnimation() {
           <motion.img
             src={logo}
             alt="Mydia Logo"
-            className="w-48 h-48"
+            className="max-w-full max-h-full"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 80, damping: 15 }}
