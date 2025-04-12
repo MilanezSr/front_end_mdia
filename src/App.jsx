@@ -1,55 +1,32 @@
-import React, { useState, useReducer, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
-import OpeningAnimation from './components/OpeningAnimation'; // Sua animação inicial
-import pdfMake from 'pdfmake/build/pdfmake'; // Importando o pdfmake
-import pdfFonts from 'pdfmake/build/vfs_fonts'; // Importando as fontes do pdfmake
-pdfMake.vfs = pdfFonts.pdfMake.vfs; // Configura as fontes para o pdfmake
+import OpeningAnimation from './components/OpeningAnimation';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 const initialState = {
   dadosContrato: {
-    tipo_contratante: '',
-    contratante_nome: '',
-    contratante_cnpj: '',
-    contratante_endereco: '',
-    contratada_nome: 'MYLENA SIMOES',
-    contratada_cnpj: '30.328.562/0001-20',
-    contratada_endereco: 'Avenida São Bento, 140, Guarulhos - SP',
-    descricao_servico: '',
-    servico_detalhado: '',
-    entregas_detalhadas: '',
-    equipe_detalhada: '',
-    captacao_detalhada: '',
-    valor_servico: '',
-    tem_gastos_extras: false,
-    gastos_detalhados: '',
-    valor_total: '',
-    data_contrato: '',
-    nome_testemunha_contratante: '',
-    rg_testemunha_contratante: '',
-    nome_testemunha_contratada: 'MYLENA SIMOES',
-    rg_testemunha_contratada: '',
+    tipo_contratante: '', contratante_nome: '', contratante_cnpj: '', contratante_endereco: '',
+    contratada_nome: 'MYLENA SIMOES', contratada_cnpj: '30.328.562/0001-20',
+    contratada_endereco: 'Avenida São Bento, 140, Guarulhos - SP', descricao_servico: '',
+    servico_detalhado: '', entregas_detalhadas: '', equipe_detalhada: '', captacao_detalhada: '',
+    valor_servico: '', tem_gastos_extras: false, gastos_detalhados: '', valor_total: '',
+    data_contrato: '', nome_testemunha_contratante: '', rg_testemunha_contratante: '',
+    nome_testemunha_contratada: 'MYLENA SIMOES', rg_testemunha_contratada: '',
   },
-  etapaAtual: 0,
-  mensagens: [],
-  resposta: '',
-  contratoConfirmado: false,
+  etapaAtual: 0, mensagens: [], resposta: '', contratoConfirmado: false,
 };
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'UPDATE_DADOS':
-      return { ...state, dadosContrato: { ...state.dadosContrato, ...action.payload } };
-    case 'SET_ETAPA':
-      return { ...state, etapaAtual: action.payload };
-    case 'ADD_MENSAGEM':
-      return { ...state, mensagens: [...state.mensagens, action.payload] };
-    case 'SET_RESPOSTA':
-      return { ...state, resposta: action.payload };
-    case 'CONFIRMAR_CONTRATO':
-      return { ...state, contratoConfirmado: true };
-    default:
-      return state;
+    case 'UPDATE_DADOS': return { ...state, dadosContrato: { ...state.dadosContrato, ...action.payload } };
+    case 'SET_ETAPA': return { ...state, etapaAtual: action.payload };
+    case 'ADD_MENSAGEM': return { ...state, mensagens: [...state.mensagens, action.payload] };
+    case 'SET_RESPOSTA': return { ...state, resposta: action.payload };
+    case 'CONFIRMAR_CONTRATO': return { ...state, contratoConfirmado: true };
+    default: return state;
   }
 }
 
@@ -57,10 +34,10 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { etapaAtual, mensagens, resposta, dadosContrato, contratoConfirmado } = state;
 
-  const etapasPessoaFisica = [
+  const etapas = [
     { campo: 'tipo_contratante', pergunta: '👥 A contratante é pessoa física ou jurídica?' },
     { campo: 'contratante_nome', pergunta: '📝 Qual o nome da contratante?' },
-    { campo: 'contratante_cnpj', pergunta: '🏢 Qual o CPF da contratante?' },
+    { campo: 'contratante_cnpj', pergunta: '🏢 Qual o CPF/CNPJ da contratante?' },
     { campo: 'contratante_endereco', pergunta: '📍 Qual o endereço da contratante?' },
     { campo: 'descricao_servico', pergunta: '🔧 Descreva brevemente o serviço contratado.' },
     { campo: 'servico_detalhado', pergunta: '⚙️ Detalhe o serviço que será realizado.' },
@@ -78,43 +55,41 @@ export default function App() {
   ];
 
   const gerarPDF = () => {
-    const documentDefinition = {
+    const d = dadosContrato;
+    const docDef = {
       content: [
         { text: 'Contrato de Prestação de Serviços', style: 'header' },
-        { text: `Contrato firmado entre ${dadosContrato.contratante_nome} (contratante) e ${dadosContrato.contratada_nome} (contratada)`, style: 'subheader' },
-        { text: `CNPJ/CPF: ${dadosContrato.contratante_cnpj} / ${dadosContrato.contratada_cnpj}`, style: 'subheader' },
-        { text: `Endereço: ${dadosContrato.contratante_endereco} / ${dadosContrato.contratada_endereco}`, style: 'subheader' },
-        { text: `Serviço Contratado: ${dadosContrato.descricao_servico}`, style: 'text' },
-        { text: `Detalhamento do Serviço: ${dadosContrato.servico_detalhado}`, style: 'text' },
-        { text: `Entregas: ${dadosContrato.entregas_detalhadas}`, style: 'text' },
-        { text: `Equipe: ${dadosContrato.equipe_detalhada}`, style: 'text' },
-        { text: `Valor do Serviço: ${dadosContrato.valor_servico}`, style: 'text' },
-        dadosContrato.tem_gastos_extras && { text: `Gastos Extras: ${dadosContrato.gastos_detalhados}`, style: 'text' },
-        { text: `Valor Total: ${dadosContrato.valor_total}`, style: 'text' },
-        { text: `Data do Contrato: ${dadosContrato.data_contrato}`, style: 'text' },
-        { text: `Testemunha Contratante: ${dadosContrato.nome_testemunha_contratante}`, style: 'text' },
-        { text: `RG Testemunha Contratante: ${dadosContrato.rg_testemunha_contratante}`, style: 'text' },
-        { text: `Testemunha Contratada: ${dadosContrato.nome_testemunha_contratada}`, style: 'text' },
-        { text: `RG Testemunha Contratada: ${dadosContrato.rg_testemunha_contratada}`, style: 'text' },
-      ],
+        { text: `Contrato firmado entre ${d.contratante_nome} (contratante) e ${d.contratada_nome} (contratada)`, style: 'subheader' },
+        { text: `CNPJ/CPF: ${d.contratante_cnpj} / ${d.contratada_cnpj}`, style: 'subheader' },
+        { text: `Endereço: ${d.contratante_endereco} / ${d.contratada_endereco}`, style: 'subheader' },
+        { text: `Serviço Contratado: ${d.descricao_servico}` },
+        { text: `Detalhamento: ${d.servico_detalhado}` },
+        { text: `Entregas: ${d.entregas_detalhadas}` },
+        { text: `Equipe: ${d.equipe_detalhada}` },
+        { text: `Captação: ${d.captacao_detalhada}` },
+        { text: `Valor: ${d.valor_servico}` },
+        d.tem_gastos_extras && { text: `Gastos Extras: ${d.gastos_detalhados}` },
+        { text: `Valor Total: ${d.valor_total}` },
+        { text: `Data do Contrato: ${d.data_contrato}` },
+        { text: `Testemunha Contratante: ${d.nome_testemunha_contratante}` },
+        { text: `RG Testemunha: ${d.rg_testemunha_contratante}` },
+        { text: `Testemunha Contratada: ${d.nome_testemunha_contratada}` },
+        { text: `RG Testemunha: ${d.rg_testemunha_contratada}` },
+      ].filter(Boolean),
       styles: {
         header: { fontSize: 22, bold: true, margin: [0, 0, 0, 10] },
         subheader: { fontSize: 16, margin: [0, 10, 0, 10] },
-        text: { fontSize: 12, margin: [0, 0, 0, 5] },
       },
     };
-
-    pdfMake.createPdf(documentDefinition).open();
+    pdfMake.createPdf(docDef).open();
   };
 
   const enviarResposta = () => {
-    const etapa = (dadosContrato.tipo_contratante === 'juridica' ? etapasPessoaFisica : etapasPessoaJuridica)[etapaAtual];
+    const etapa = etapas[etapaAtual];
     const valor = resposta.trim();
     if (!valor) return;
 
-    const campoAtual = etapa.campo;
-
-    if (campoAtual === 'tem_gastos_extras') {
+    if (etapa.campo === 'tem_gastos_extras') {
       const temGastos = valor.toLowerCase() === 'sim';
       dispatch({ type: 'UPDATE_DADOS', payload: { tem_gastos_extras: temGastos } });
       dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
@@ -123,28 +98,22 @@ export default function App() {
       if (!temGastos) {
         dispatch({ type: 'UPDATE_DADOS', payload: { gastos_detalhados: 'Sem gastos extras' } });
         dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 2 });
-        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: (etapasPessoaFisica[etapaAtual + 2] || etapasPessoaJuridica[etapaAtual + 2]).pergunta } });
-      } else {
-        dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
-        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: (etapasPessoaFisica[etapaAtual + 1] || etapasPessoaJuridica[etapaAtual + 1]).pergunta } });
+        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[etapaAtual + 2]?.pergunta } });
+        return;
       }
     } else {
-      const updateData = { [campoAtual]: valor };
-      dispatch({ type: 'UPDATE_DADOS', payload: updateData });
+      dispatch({ type: 'UPDATE_DADOS', payload: { [etapa.campo]: valor } });
       dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
       dispatch({ type: 'SET_RESPOSTA', payload: '' });
-
-      const proximaEtapa = (dadosContrato.tipo_contratante === 'juridica' ? etapasPessoaFisica : etapasPessoaJuridica)[etapaAtual + 1];
-      if (proximaEtapa) {
-        dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: proximaEtapa.pergunta } });
-      }
     }
+
+    const proxima = etapas[etapaAtual + 1];
+    if (proxima) dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: proxima.pergunta } });
+    dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
   };
 
   useEffect(() => {
-    if (etapaAtual === 0) {
-      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapasPessoaFisica[etapaAtual].pergunta } });
-    }
+    if (etapaAtual === 0) dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[0].pergunta } });
   }, [etapaAtual]);
 
   return (
@@ -154,29 +123,20 @@ export default function App() {
           <OpeningAnimation />
           <div className="chat">
             <div className="messages">
-              {mensagens.map((msg, index) => (
-                <motion.div key={index} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-                  <div className={msg.autor === 'user' ? 'message user' : 'message mydia'}>
-                    {msg.texto}
-                  </div>
+              {mensagens.map((msg, i) => (
+                <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+                  <div className={msg.autor === 'user' ? 'message user' : 'message mydia'}>{msg.texto}</div>
                 </motion.div>
               ))}
             </div>
-
-            {etapaAtual < etapasPessoaFisica.length || etapaAtual < etapasPessoaJuridica.length ? (
+            {etapaAtual < etapas.length ? (
               <div>
-                <input
-                  type="text"
-                  value={resposta}
-                  onChange={(e) => dispatch({ type: 'SET_RESPOSTA', payload: e.target.value })}
-                  placeholder="Digite sua resposta"
-                />
+                <input type="text" value={resposta} onChange={(e) => dispatch({ type: 'SET_RESPOSTA', payload: e.target.value })} placeholder="Digite sua resposta" />
                 <button onClick={enviarResposta}>Enviar</button>
               </div>
             ) : (
               <div>
                 <button onClick={gerarPDF}>Gerar Contrato em PDF</button>
-                {pdfUrl && <a href={pdfUrl} download="contrato.pdf">Baixar Contrato</a>}
                 <button onClick={() => dispatch({ type: 'CONFIRMAR_CONTRATO' })}>Confirmar Contrato</button>
               </div>
             )}
@@ -184,8 +144,7 @@ export default function App() {
         </>
       ) : (
         <div>
-          <h2>Contrato Confirmado</h2>
-          <button onClick={() => dispatch({ type: 'CANCELAR_CONTRATO' })}>Cancelar</button>
+          <h2>Contrato Confirmado!</h2>
         </div>
       )}
     </div>
