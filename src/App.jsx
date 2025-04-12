@@ -2,9 +2,7 @@ import React, { useReducer, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import OpeningAnimation from './components/OpeningAnimation';
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+import axios from 'axios';
 
 const initialState = {
   dadosContrato: {
@@ -55,33 +53,18 @@ export default function App() {
   ];
 
   const gerarPDF = () => {
-    const d = dadosContrato;
-    const docDef = {
-      content: [
-        { text: 'Contrato de Prestação de Serviços', style: 'header' },
-        { text: `Contrato firmado entre ${d.contratante_nome} (contratante) e ${d.contratada_nome} (contratada)`, style: 'subheader' },
-        { text: `CNPJ/CPF: ${d.contratante_cnpj} / ${d.contratada_cnpj}`, style: 'subheader' },
-        { text: `Endereço: ${d.contratante_endereco} / ${d.contratada_endereco}`, style: 'subheader' },
-        { text: `Serviço Contratado: ${d.descricao_servico}` },
-        { text: `Detalhamento: ${d.servico_detalhado}` },
-        { text: `Entregas: ${d.entregas_detalhadas}` },
-        { text: `Equipe: ${d.equipe_detalhada}` },
-        { text: `Captação: ${d.captacao_detalhada}` },
-        { text: `Valor: ${d.valor_servico}` },
-        d.tem_gastos_extras && { text: `Gastos Extras: ${d.gastos_detalhados}` },
-        { text: `Valor Total: ${d.valor_total}` },
-        { text: `Data do Contrato: ${d.data_contrato}` },
-        { text: `Testemunha Contratante: ${d.nome_testemunha_contratante}` },
-        { text: `RG Testemunha: ${d.rg_testemunha_contratante}` },
-        { text: `Testemunha Contratada: ${d.nome_testemunha_contratada}` },
-        { text: `RG Testemunha: ${d.rg_testemunha_contratada}` },
-      ].filter(Boolean),
-      styles: {
-        header: { fontSize: 22, bold: true, margin: [0, 0, 0, 10] },
-        subheader: { fontSize: 16, margin: [0, 10, 0, 10] },
-      },
-    };
-    pdfMake.createPdf(docDef).open();
+    axios.post('http://localhost:8000/gerar-contrato', dadosContrato, { responseType: 'blob' })
+      .then(response => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'contrato.pdf');
+        document.body.appendChild(link);
+        link.click();
+      })
+      .catch(error => {
+        console.error('Erro ao gerar o PDF:', error);
+      });
   };
 
   const enviarResposta = () => {
