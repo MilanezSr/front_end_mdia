@@ -55,10 +55,10 @@ function reducer(state, action) {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { etapaAtual, mensagens, digitando, resposta, pdfUrl, dadosContrato } = state;
+  const { etapaAtual, mensagens, resposta, pdfUrl, dadosContrato } = state;
 
   const etapas = [
-    { campo: 'tipo_contratante', pergunta: 'Olá, My! A contratante é pessoa física ou jurídica?' },
+    { campo: 'tipo_contratante', pergunta: 'A contratante é pessoa física ou jurídica?' },
     { campo: 'contratante_nome', pergunta: 'Qual o nome da contratante?' },
     { campo: 'contratante_cnpj', pergunta: 'Qual o CNPJ ou CPF da contratante?' },
     { campo: 'contratante_endereco', pergunta: 'Qual o endereço da contratante?' },
@@ -67,20 +67,20 @@ export default function App() {
     { campo: 'entregas_detalhadas', pergunta: 'Quais as entregas previstas?' },
     { campo: 'equipe_detalhada', pergunta: 'Qual será a equipe envolvida com você?' },
     { campo: 'captacao_detalhada', pergunta: 'Detalhes sobre a captação (ex: interna, áudio, iluminação).' },
-    { campo: 'valor_servico', pergunta: 'Qual o valor do serviço (ex: 6500,00)?' },
+    { campo: 'valor_servico', pergunta: 'Qual o valor do serviço?' },
     { campo: 'tem_gastos_extras', pergunta: 'Existem gastos extras (como estacionamento)? (sim/não)' },
     { campo: 'gastos_detalhados', pergunta: 'Descreva os gastos extras.' },
-    { campo: 'valor_total', pergunta: 'Qual o valor total final (serviço + extras)?' },
-    { campo: 'data_contrato', pergunta: 'Informe a data e local do contrato (ex: Guarulhos, 11 de Abril de 2025).' },
+    { campo: 'valor_total', pergunta: 'Qual o valor total (serviço + extras)?' },
+    { campo: 'data_contrato', pergunta: 'Informe data e local do contrato.' },
     { campo: 'nome_testemunha_contratante', pergunta: 'Nome da testemunha da contratante:' },
     { campo: 'rg_testemunha_contratante', pergunta: 'RG da testemunha da contratante:' },
-    { campo: 'rg_testemunha_contratada', pergunta: 'RG da testemunha que você irá colocar:' },
+    { campo: 'rg_testemunha_contratada', pergunta: 'RG da sua testemunha:' },
   ];
 
   const validarCampos = () => {
     const { valor_servico, valor_total } = dadosContrato;
     if (isNaN(valor_servico) || isNaN(valor_total)) {
-      alert("Os valores de serviço e total precisam ser numéricos, My.");
+      alert("Valores de serviço e total devem ser numéricos.");
       return false;
     }
     return true;
@@ -96,45 +96,37 @@ export default function App() {
         body: JSON.stringify(dadosContrato),
       });
 
-      if (!res.ok) throw new Error("Falha ao gerar o seu contrato...");
+      if (!res.ok) throw new Error('Erro ao gerar contrato.');
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-
       dispatch({ type: 'SET_PDF_URL', payload: url });
-      dispatch({
-        type: 'ADD_MENSAGEM',
-        payload: { autor: 'mydia', texto: 'Contrato gerado com sucesso, gata! 🎉 Clique abaixo para baixar o seu contrato.' },
-      });
+      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: 'Contrato gerado! Clique abaixo para baixar.' } });
     } catch (error) {
-      console.error("Erro ao gerar o contrato:", error);
-      alert("Ocorreu um erro ao gerar o contrato.");
+      console.error(error);
+      alert('Erro ao gerar contrato.');
     }
   };
 
   const enviarResposta = () => {
     const etapa = etapas[etapaAtual];
     const valor = resposta.trim();
-
     if (!valor) return;
 
-    const respostaConvertida =
-      etapa.campo === 'tem_gastos_extras' ? valor.toLowerCase() === 'sim' : valor;
+    const respostaConvertida = etapa.campo === 'tem_gastos_extras' ? valor.toLowerCase() === 'sim' : valor;
 
     dispatch({ type: 'UPDATE_DADOS', payload: { [etapa.campo]: respostaConvertida } });
     dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'user', texto: valor } });
     dispatch({ type: 'SET_RESPOSTA', payload: '' });
 
     if (etapa.campo === 'tem_gastos_extras' && valor.toLowerCase() !== 'sim') {
-      dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 2 }); // Pula "gastos_detalhados"
+      dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 2 });
     } else if (etapaAtual === etapas.length - 1) {
       handleSubmit();
     } else {
-      dispatch({ type: 'SET_ETAPA', payload: etapaAtual + 1 });
-      dispatch({
-        type: 'ADD_MENSAGEM',
-        payload: { autor: 'mydia', texto: etapas[etapaAtual + 1].pergunta },
-      });
+      const proximaEtapa = etapaAtual + 1;
+      dispatch({ type: 'SET_ETAPA', payload: proximaEtapa });
+      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[proximaEtapa].pergunta } });
     }
   };
 
