@@ -91,6 +91,11 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    // Mensagem inicial de boas-vindas
+    dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: 'Seja bem-vinda, My! Aproveite a sua ferramenta.' } });
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8">
       <OpeningAnimation />
