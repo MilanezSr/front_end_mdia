@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
-import OpeningAnimation from './OpeningAnimation'; // certifique-se de que esse componente existe
+import OpeningAnimation from './components/OpeningAnimation'; // certifique-se de que esse componente existe
 
 export default function App() {
   const [etapa, setEtapa] = useState(0);
