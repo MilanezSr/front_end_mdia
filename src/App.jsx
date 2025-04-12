@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer } from 'react';
 import { motion } from 'framer-motion';
-import './App.css';  // Se precisar de algum estilo extra
+import './App.css'; // Se precisar de algum estilo extra
 import OpeningAnimation from './components/OpeningAnimation'; // Sua animação inicial
 
 const initialState = {
@@ -31,6 +31,7 @@ const initialState = {
   mensagens: [],
   resposta: '',
   pdfUrl: null,
+  contratoConfirmado: false, // Novo estado para controlar o fluxo
 };
 
 function reducer(state, action) {
@@ -45,6 +46,10 @@ function reducer(state, action) {
       return { ...state, resposta: action.payload };
     case 'SET_PDF_URL':
       return { ...state, pdfUrl: action.payload };
+    case 'CANCELAR_CONTRATO':
+      return { ...state, contratoConfirmado: false, mensagens: [...state.mensagens, { autor: 'mydia', texto: 'Que pena, My... gostaria de te ajudar!' }] }; 
+    case 'CONFIRMAR_CONTRATO':
+      return { ...state, contratoConfirmado: true }; // Contrato confirmado
     default:
       return state;
   }
@@ -52,7 +57,7 @@ function reducer(state, action) {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { etapaAtual, mensagens, resposta, pdfUrl, dadosContrato } = state;
+  const { etapaAtual, mensagens, resposta, pdfUrl, dadosContrato, contratoConfirmado } = state;
 
   const etapas = [
     { campo: 'tipo_contratante', pergunta: '👥 A contratante é pessoa física ou jurídica?' },
@@ -91,9 +96,20 @@ export default function App() {
     }
   };
 
+  const responderContrato = (valor) => {
+    if (valor.toLowerCase() === 'não') {
+      dispatch({ type: 'CANCELAR_CONTRATO' });
+    } else {
+      dispatch({ type: 'CONFIRMAR_CONTRATO' });
+      dispatch({ type: 'SET_ETAPA', payload: 1 }); // Avançar para a próxima pergunta
+      dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: etapas[1].pergunta } });
+    }
+  };
+
   useEffect(() => {
     // Mensagem inicial de boas-vindas
     dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: 'Seja bem-vinda, My! Aproveite a sua ferramenta.' } });
+    dispatch({ type: 'ADD_MENSAGEM', payload: { autor: 'mydia', texto: 'Quer realizar um contrato comigo? (sim/não)' } });
   }, []);
 
   return (
@@ -120,7 +136,7 @@ export default function App() {
               </motion.div>
             </div>
           ))}
-          {etapaAtual < etapas.length && (
+          {etapaAtual < etapas.length && contratoConfirmado && (
             <div className="flex justify-start">
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
@@ -128,7 +144,7 @@ export default function App() {
                 transition={{ duration: 0.4 }}
                 className="bg-gray-700 text-pink-400 px-4 py-2 rounded-lg max-w-[80%]"
               >
-                Quer realizar um contrato comigo?
+                🕒 Digite sua resposta...
               </motion.div>
             </div>
           )}
@@ -140,11 +156,11 @@ export default function App() {
             className="flex-1 bg-gray-800 p-2 rounded text-white border border-pink-500 focus:outline-none"
             value={resposta}
             onChange={(e) => dispatch({ type: 'SET_RESPOSTA', payload: e.target.value })}
-            onKeyDown={(e) => e.key === 'Enter' && enviarResposta()}
+            onKeyDown={(e) => e.key === 'Enter' && (contratoConfirmado ? enviarResposta() : responderContrato(resposta))}
             placeholder="Digite sua resposta..."
           />
           <button
-            onClick={enviarResposta}
+            onClick={() => contratoConfirmado ? enviarResposta() : responderContrato(resposta)}
             className="bg-pink-600 px-4 rounded text-white hover:bg-pink-700 transition"
           >
             Enviar
