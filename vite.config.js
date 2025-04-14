@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'dist',  // Garantir que a saída seja no diretório 'dist'
+    outDir: 'dist', // <- isso garante a criação da pasta
     chunkSizeWarningLimit: 10000,
     rollupOptions: {
       external: ['axios']
