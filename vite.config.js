@@ -5,9 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
-    chunkSizeWarningLimit: 10000, // Definindo o limite para 1000KB (1MB)
+    outDir: 'dist',  // Definindo explicitamente o diretório de saída
+    chunkSizeWarningLimit: 10000, // Definindo o limite para 10000KB (10MB)
     rollupOptions: {
-      external: ['axios'] // Adicionando axios como dependência externa
+      external: ['axios'] // Caso queira manter o axios como dependência externa
     }
   }
 });
